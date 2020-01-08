@@ -39,6 +39,8 @@ Table of Contents
         * [gw6](#gw6)
         * [dns6](#dns6)
         * [mtu](#mtu)
+        * [wake_on_lan](#wake_on_lan)
+        * [wake_on_lan_password](#wake_on_lan_password)
  * [bond specific](#bond-specific)
         * [primary](#primary)
         * [miimon](#miimon)
@@ -203,6 +205,21 @@ Manage the network devices. Create, modify, and manage, ethernet, teams, bonds, 
 **description:**
 - The connection MTU, e.g. 9000. This can't be applied when creating the interface and is done once the interface has been created. (NetworkManager default: 1500)
 - Can be used when modifying Team, VLAN, Ethernet (Future plans to implement wifi, pppoe, infiniband)  
+
+#### wake_on_lan:
+**required:** False
+**choices:** [ "phy", "unicast", "multicast", "broadcast", "arp", "magic", "default", "ignore" ]
+**default:** None
+**description:**
+- The wake on lan option to enable. Not all devices support all options.
+- Can be used when creating or modifying Ethernet
+
+#### wake_on_lan_password:
+**required:** False
+**default:** None
+**description:**
+- If specified, the password used with magic-packet-based Wake-on-LAN, represented as an Ethernet MAC address.
+- Can be used when creating or modifying Ethernet
 
 ###***Bond specific***  
 ___
@@ -469,6 +486,23 @@ tenant_ip: "192.168.200.21/23"
       - { cname: 'team-p1p2'}
       - { cname: 'team-p2p1'}
       - { cname: 'team-p2p2'}
+```
+
+## playbook-wake-on-lan.yml example
+
+```yml
+---
+- hosts: localhost
+  remote_user: root
+  tasks:
+
+  - name: enable wake on lan for 'Wired connection 1'
+    nmcli:
+      cname: 'Wired connection 1'
+      type: ethernet
+      action: mod
+      wake_on_lan: magic
+      state: present
 ```
 
 #Exit Status's:

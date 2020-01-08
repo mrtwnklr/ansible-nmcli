@@ -1,0 +1,13 @@
+---
+- hosts: localhost
+  remote_user: root
+  tasks:
+
+  - name: enable wake on lan for 'Wired connection 1'
+    nmcli:
+      cname: 'Wired connection 1'
+      type: ethernet
+      action: mod
+      wake_on_lan: magic
+      state: present
+    no_log: true

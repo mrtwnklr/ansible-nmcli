@@ -104,6 +104,19 @@ options:
     dns6:
         required: False
         description: A list of upto 3 dns servers, ipv6 format e.g. To add two IPv6 DNS server addresses: ['"2001:4860:4860::8888 2001:4860:4860::8844"']
+    wake_on_lan:
+        required: False
+        choices: [ "phy", "unicast", "multicast", "broadcast", "arp", "magic", "default", "ignore" ]
+        default: None
+        description:
+            - The wake on lan option to enable. Not all devices support all options.
+            - Can be used when creating or modifying Ethernet
+    wake_on_lan_password:
+        required: False
+        default: None
+        description:
+            - If specified, the password used with magic-packet-based Wake-on-LAN, represented as an Ethernet MAC address.
+            - Can be used when creating or modifying Ethernet
     mtu:
         required: False
         default: None
@@ -351,6 +364,23 @@ tenant_ip: "192.168.200.21/23"
       - { cname: 'team-p2p1'}
       - { cname: 'team-p2p2'}
 ```
+
+## playbook-wake-on-lan.yml example
+
+```yml
+---
+- hosts: localhost
+  remote_user: root
+  tasks:
+
+  - name: enable wake on lan for 'Wired connection 1'
+    nmcli:
+      cname: 'Wired connection 1'
+      type: ethernet
+      action: mod
+      wake_on_lan: magic
+      state: present
+```
 # To add an Ethernet connection with static IP configuration, issue a command as follows
 - nmcli: cname=my-eth1 ifname=eth1 type=ethernet ip4=192.168.100.100/24 gw4=192.168.100.1 state=present
 
@@ -457,6 +487,8 @@ class Nmcli(object):
         self.ip6=module.params['ip6']
         self.gw6=module.params['gw6']
         self.dns6=module.params['dns6']
+        self.wake_on_lan=module.params['wake_on_lan']
+        self.wake_on_lan_password=module.params['wake_on_lan_password']
         self.mtu=module.params['mtu']
         self.stp=module.params['stp']
         self.priority=module.params['priority']
@@ -838,6 +870,12 @@ class Nmcli(object):
         if self.enabled is not None:
             cmd.append('autoconnect')
             cmd.append(self.enabled)
+        if self.wake_on_lan is not None:
+            cmd.append('802-3-ethernet.wake-on-lan')
+            cmd.append(self.wake_on_lan)
+        if self.wake_on_lan_password is not None:
+            cmd.append('802-3-ethernet.wake-on-lan-password')
+            cmd.append(self.wake_on_lan_password)
         return cmd
 
     def modify_connection_ethernet(self):
@@ -873,6 +911,12 @@ class Nmcli(object):
         if self.enabled is not None:
             cmd.append('autoconnect')
             cmd.append(self.enabled)
+        if self.wake_on_lan is not None:
+            cmd.append('802-3-ethernet.wake-on-lan')
+            cmd.append(self.wake_on_lan)
+        if self.wake_on_lan_password is not None:
+            cmd.append('802-3-ethernet.wake-on-lan-password')
+            cmd.append(self.wake_on_lan_password)
         return cmd
 
     def create_connection_bridge(self):
@@ -934,7 +978,7 @@ class Nmcli(object):
         elif self.type=='bond-slave':
             cmd=self.create_connection_bond_slave()
         elif self.type=='ethernet':
-            if (self.mtu is not None) or (self.dns4 is not None) or (self.dns6 is not None):
+            if (self.mtu is not None) or (self.wake_on_lan is not None) or (self.dns4 is not None) or (self.dns6 is not None):
                 cmd=self.create_connection_ethernet()
                 self.execute_command(cmd)
                 cmd=self.modify_connection_ethernet()
@@ -995,6 +1039,8 @@ def main():
             ip6=dict(required=False, default=None, type='str'),
             gw6=dict(required=False, default=None, type='str'),
             dns6=dict(required=False, default=None, type='str'),
+            wake_on_lan=dict(required=False, default=None, choices=['phy', 'unicast', 'multicast', 'broadcast', 'arp', 'magic', 'default', 'ignore'], type='str'),
+            wake_on_lan_password=dict(required=False, default=None, type='str'),
             # Bond Specific vars
             mode=dict(require=False, default="balance-rr", choices=["balance-rr", "active-backup", "balance-xor", "broadcast", "802.3ad", "balance-tlb", "balance-alb"], type='str'),
             miimon=dict(required=False, default=None, type='str'),
